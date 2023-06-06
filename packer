@@ -1,28 +1,28 @@
 packer {
   required_plugins {
     proxmox = {
-      version = ">= 1.1.2"
-      source  = "github.com/hashicorp/proxmox"
+      version = ">= 1.1.2"                              # Version du plugin utilisé#
+      source  = "github.com/hashicorp/proxmox"          #Plugins permettant de faire le lien entre notre script et l'api qui va déployer notre ressources#
     }
   }
 }
 
-source "proxmox-clone" "Yoda" {
+source "proxmox-clone" "NOM_TEMPLATE_SOURCE" {
     #ID
     task_timeout = "15m"
-    clone_vm = "Yoda"
-    proxmox_url = "http://10.27.0.100:8006/api2/json"
-    username = "CyrilS@pve!packer"
-    token = "34cd85e4-da2a-44df-b08c-df3039bb7433"
-    node = "Grp1-Srv1"
-    insecure_skip_tls_verify = true	
+    clone_vm = "NOM_TEMPLATE_SOURCE"
+    proxmox_url = "http://SERVEUR_CIBLE/api2/json"
+    username = ""
+    token = ""                                 #Token d'authentification de votre utilisateur#
+    node = "nom du noeud"
+    insecure_skip_tls_verify = true	           #Bypassé la vérification TLS#
     # Base ISO File configuration
     # System
-    vm_name  = "Yoda3" 
-    scsi_controller = "virtio-scsi-single"
-    ssh_password         = "Prox-Yoda"
+    vm_name  = ""                              #Nommer votre template#
+    scsi_controller = "virtio-scsi-single"     #Controlleur du disque ISCI,IDE,SATA,SAS#    
+    ssh_password         = "mot_de_passe"
     ssh_timeout          = "20m"
-    ssh_username         = "root"
+    ssh_username         = "utilisateur"
 
     
     }
@@ -32,23 +32,23 @@ build {
     sources = ["source.proxmox-clone.Yoda"]
     provisioner "shell" {
         inline = [
-            "hostnamectl set-hostname yoda",
-            "echo \"cyrils ALL=(ALL) NOPASSWD:ALL\" | tee /etc/sudoers.d/cyrils",
-            "echo \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDvSN1kRwuJMHsE3doczXygQUXX6yGEv9IYPKYFf88QXUOExB2jlHd/A+TqCOSPO5LIDXnV6lJxj6qhVkxfrsA0a6bVQNYQQJsc5wcmZ8Cxt+OnK9l+2BNXu0fTyw6ePC7qTi5kLzBdi9KuxZl+CW/3HEDBU8J74i5S6Mes+0yMn/E/bZmpIbwCSsArx5j+Yt6LCccC09aLIFCrCyNg4Zrju8peLJfmR/WNtmRXlJ0xk9vvw0HtrnnFJOQ2qe4zNFEc3MJuZO660pXjSluZvYpjxvt/N2nYe42o0sPkVizqIMbfucm4jF2Bco3f7Mz47kRq/D72mcZxMTY3E4vEsZcvTfF7KSDT8LuJGsgVBUDT/AF5xBD0OdyXR+no/fhyRDqVraxL3jkg8kSSPQhFPbLnNgocd6Jspq1DJRBVhR5jQF6tUGu8J2QkExmI5ZX5P6pHxi0S8T6HEaWb47SqI7JgSWatXsvt7nK2Q5eYK7iUoCTF3AJai1TjphaDa6LP5hs= cyril@Asus-TUF \" >>/home/cyrils/.ssh/authorized_keys",
-            "apt-get update",
-            "apt-get install -y git",
-            "git config --global user.name \"CsIlGiEz\"",
-            "git config --global user.email \"sebillecyril.9@gmail.com\"",
-            "mkdir Yoda1",
-            "cd Yoda1",
-            "touch README.md",
-            "echo \"# Yoda1\" >> README.md",
-            "git init",
-            "git add README.md",
-            "git commit -m \"first commit\"",
-            "git branch -M main",
-            "git remote add origin https://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@github.com/CsIlGiEz/Yoda.git",
-            "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git push -u origin main",
+            "hostnamectl set-hostname yoda",                                               #Modifier le nom de la machine#
+            "echo \"cyrils ALL=(ALL) NOPASSWD:ALL\" | tee /etc/sudoers.d/cyrils",           #Ne pas demander le mot de passe #
+            "echo \"ssh-rsa",                                                                #Chemin ou sera stocké la clé ssh sur votre template#
+            "apt-get update",                                                                 #Mise a jour du cache#
+            "apt-get install -y git",                                                          #Installation de git#
+            "git config --global user.name \"$git_user\"",                                      #Nom du compte github#
+            "git config --global user.email \"$git_email\"",                                     #Adresse email du compte github#
+            "mkdir Yoda1",                                                                        #Création d'un répértoire git#
+            "cd Yoda1",                                                                            #Se déplacer dans le répertoire#
+            "touch README.md",                                                                      #Crée un fichier#
+            "echo \"# Yoda1\" >> README.md",                                                         #Déplacer le fichier dans le dossier#
+            "git init",                                                                               #Initialiser son repository#
+            "git add README.md",                                                                       #Ajoute le fichier README.MD à l'index de GIT#
+            "git commit -m \"first commit\"",                                                           #Crée un nouveau commit avec les modifications actuellement présentes dans l'index#
+            "git branch -M main",                                                                        #renomme la branche actuelle en "main"#
+            "git remote add origin https://{token}@github.com/CsIlGiEz/Yoda.git",                         #ajoute un nouveau référentiel distant appelé "origin"#
+            "GIT_SSH_COMMAND=\"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no\" git push -u origin main",          #pousse les modifications locales de la branche "main" vers le référentiel distant "origin"#
         ]
     }
 }
