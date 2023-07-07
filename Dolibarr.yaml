@@ -1,0 +1,105 @@
+---
+- name: Déploiement de Dolibarr
+  hosts: dolibarr_servers
+  become: true
+  become_method: su
+
+  vars:
+    dolibarr_version: "17.0.2"
+    dolibarr_install_dir: "/opt/dolibarr"
+    dolibarr_config_file: "/etc/dolibarr.conf"
+
+  tasks:
+    - name: Créer le répertoire d'installation
+      file:
+        path: "{{ dolibarr_install_dir }}"
+        state: directory
+        mode: 0755
+
+    - name: Télécharger Dolibarr
+      get_url:
+        url: "https://sourceforge.net/projects/dolibarr/files/latest/download"
+        dest: "{{ dolibarr_install_dir }}/dolibarr-{{ dolibarr_version }}.zip"
+
+    - name: Extraire les fichiers
+      unarchive:
+        src: "/opt/dolibarr/dolibarr-17.0.2.zip"
+        dest: "/opt/dolibarr/"
+        extra_opts: "-o"
+        remote_src: true
+      become: true  
+      #notify:
+        #- Redémarrer Dolibarr
+
+    - name: Changer les permissions des fichiers
+      file:
+        path: "{{ dolibarr_install_dir }}"
+        state: directory
+        recurse: yes
+        mode: 0755
+
+    - name: Copier le fichier de configuration
+      copy:
+        content: |
+          <?php
+          $dolibarr_main_url_root='http://172.16.20.114/dolibarr', 'http://172.16.20.113/dolibarr';
+          $dolibarr_main_db_host='localhost';
+          $dolibarr_main_db_port='';
+          $dolibarr_main_db_name='dolibarr';
+          $dolibarr_main_db_prefix='llx_';
+          $dolibarr_main_db_user='ERP_CRM_DB';
+          $dolibarr_main_db_pass='Erty123!';
+          ?>
+        dest: "{{ dolibarr_install_dir }}/dolibarr-{{ dolibarr_version }}/htdocs/conf/conf.php"
+        mode: 0644
+
+    - name: Définir les propriétaires et les groupes
+      file:
+        path: "{{ dolibarr_install_dir }}"
+        state: directory
+        recurse: yes
+        owner: template
+        #group: Site_Lille
+
+    - name: Installer les dépendances PHP
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - php
+        - php-mysql
+        - php-zip
+        - php-gd
+        - php-curl
+        - php-xml
+        - php-mbstring
+        - php-intl
+        - php-ldap
+        - php-imagick
+
+    - name: Activer les modules Apache
+      apache2_module:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - rewrite
+        - headers
+
+    - name: Redémarrer Apache
+      service:
+        name: apache2
+        state: restarted
+
+    - name: Create MariaDB ERP database
+      mariadb:
+        name: erp
+        state: present
+        login_user: root
+        login_password: root
+
+    - name: Create MariaDB CRM database
+      mariadb:
+        name: crm
+        state: present
+        login_user: root
+        login_password: root
